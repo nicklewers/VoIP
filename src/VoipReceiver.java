@@ -27,7 +27,7 @@ public class VoipReceiver implements Runnable {
     
 
     /*
-    * Instantiate receiver.
+    * Construct receiver.
     * @param port to receive on.
     * @throws LineUnavailableException if no headphones/mic detected.
     */
