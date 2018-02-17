@@ -25,7 +25,7 @@ public class VoipSender implements Runnable {
     final AudioRecorder recorder;
     
     /*
-    * Instantiate sender.
+    * Construct sender.
     * @param port to send on.
     * @throws LineUnavailableException is no headphones/mic detected.
     */
