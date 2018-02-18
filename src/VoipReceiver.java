@@ -6,6 +6,10 @@ import CMPC3M06.AudioPlayer;
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 
+import uk.ac.uea.cmp.voip.DatagramSocket2;
+import uk.ac.uea.cmp.voip.DatagramSocket3;
+import uk.ac.uea.cmp.voip.DatagramSocket4;
+
 import java.util.Vector;
 import java.util.Iterator;
 import java.net.*;
@@ -17,7 +21,7 @@ import java.net.*;
 public class VoipReceiver implements Runnable {
 
     //Socket to receive data to.  
-    static DatagramSocket receiving_socket;
+    static DatagramSocket2 receiving_socket;
     //Port to open socket on.
     int PORT;
     //Vector to store audio blocks. 
@@ -68,7 +72,7 @@ public class VoipReceiver implements Runnable {
         
         try {
             //Open socket to receive to.
-            receiving_socket = new DatagramSocket(PORT);
+            receiving_socket = new DatagramSocket2(PORT);
             
             //Init, fill, receive and play in the loop.
             byte[] buffer;
@@ -88,10 +92,12 @@ public class VoipReceiver implements Runnable {
                 player.playBlock(packet.getData());
                     
             }
-            //Running is false, close player.
-            player.close();
+            
             //Quit receiving.
             receiving_socket.close();
+            //Running is false, close player.
+            player.close();
+            
             System.out.printf("Receiver is closed. Received %d packets.\n", voiceVector.size());
             
             //Uncomment to replay, used for some troubleshooting earlier,
