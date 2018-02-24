@@ -70,7 +70,7 @@ public class VoipSender2 implements Runnable {
         byte[] block;
         
         voiceVector = new Vector<byte[]>();
-        //Create a new array of size 16 for 4*4 block interleaver.
+        //Create an array size 16 for 4*4 block interleaver.
         DatagramPacket[] packets = new DatagramPacket[16];
         
         //Create a new interleaver with capacity of size 16.
