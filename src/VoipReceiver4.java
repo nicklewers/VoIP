@@ -11,15 +11,15 @@ import uk.ac.uea.cmp.voip.DatagramSocket4;
 import java.util.Vector;
 import java.util.Iterator;
 import java.net.*;
+import java.util.Arrays;
 
 /**
- * Receiver for DatagramSocket4.
+ * Receiver for DGS4.
  */
-
 public class VoipReceiver4 implements Runnable {
 
     //Socket to receive data to.  
-    static DatagramSocket receiving_socket;
+    static DatagramSocket4 receiving_socket;
     //Port to open socket on.
     int PORT;
     //Vector to store audio blocks. 
@@ -69,7 +69,6 @@ public class VoipReceiver4 implements Runnable {
     public void run() {
         
         try {
-            byte b = (byte) 0;
             //Open socket to receive to.
             receiving_socket = new DatagramSocket4(PORT);
             
@@ -83,33 +82,28 @@ public class VoipReceiver4 implements Runnable {
             while(running){
                 
                 //Keep initializing new buffer and receiving while running.
-                buffer = new byte[513];
+                buffer = new byte[516];
                 packet = new DatagramPacket(buffer, 0, buffer.length);
                 receiving_socket.receive(packet);
-                //repetition 
                 
-                //Array for the decoded data.
-                byte[] data = new byte[512];
-                if(!CRC.isCorrupt(buffer)){
-                    data = CRC.crcDecode(buffer);
-                    lastGood = data;
-                } else {
-                    if(!(lastGood==null)){
-                        data = lastGood;
-                    } else {
-                        //If the first packet is corrupt fill it with silence
-                        //and play.
-                        for(int i = 0; i < data.length; i++){
-                            data[i] = (byte)0;
-                        }
+                //Decode data received and packet data's integrity.
+                buffer = CRC.decode(buffer);
+                if(buffer == null){
+                    //Null buffer means discarded packet, fill with silence.
+                    buffer = new byte[512];
+                    
+                    //Or replay the last good packet in its place.
+                    if(lastGood != null){
+                        buffer = lastGood;
                     }
+                } else {
+                    lastGood = buffer;
                 }
                 
-                //Add to use in replay() and count number of packets received.
-                voiceVector.add(data);
+                voiceVector.add(buffer);
                 
                 //Play.
-                player.playBlock(data);
+                player.playBlock(buffer);
                     
             }
             
@@ -119,10 +113,6 @@ public class VoipReceiver4 implements Runnable {
             player.close();
             
             System.out.printf("Receiver is closed. Received %d packets.\n", voiceVector.size());
-            
-            //Uncomment to replay, used for some troubleshooting earlier,
-            //kinda useless now.
-            //replay();
             
         } catch (IOException e){
             e.printStackTrace();
