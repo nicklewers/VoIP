@@ -24,7 +24,7 @@ final public class Interleaver {
         this.DIMENSION = (int)Math.sqrt(CAPACITY);
         
         if(CAPACITY%DIMENSION!=0) throw new IllegalArgumentException();
-        
+        //(Should be invalid parameter ex. correct later.)
     }
     
     //Get array of packets and put it in a rows*cols vector.
