@@ -8,6 +8,8 @@ import CMPC3M06.AudioPlayer;
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 
+import uk.ac.uea.cmp.voip.DatagramSocket2;
+import uk.ac.uea.cmp.voip.DatagramSocket3;
 import uk.ac.uea.cmp.voip.DatagramSocket4;
 
 import java.util.Iterator;
@@ -15,9 +17,8 @@ import java.util.Vector;
 import java.net.*;
 
 /**
- * Sender for DatagramSocket 4.
+ * Sender for DGS4.
  */
-
 public class VoipSender4 implements Runnable {
     
     //Socket to send data to.
@@ -92,7 +93,7 @@ public class VoipSender4 implements Runnable {
         //Init, fill and send in the loop.
         DatagramPacket packet;
         byte[] block;
-        
+        byte[] data = new byte[516];
         voiceVector = new Vector<byte[]>();
         
         while(running){         
@@ -103,12 +104,10 @@ public class VoipSender4 implements Runnable {
             // Block size 512 bytes.
             block = recorder.getBlock();
             
-            //Encode the block.
-            block = CRC.crcCalc(block);
+            //Calculate CRC value and append to block.
+            block = CRC.encode(block);
             
-            //Send encoded block.
-            packet = new DatagramPacket(block, 513, clientIP, PORT);
-            
+            packet = new DatagramPacket(block, block.length, clientIP, PORT);
             //Add to use in replay() and count number of packets sent.
             voiceVector.add(packet.getData());
             
