@@ -24,7 +24,7 @@ final public class Interleaver {
         this.DIMENSION = (int)Math.sqrt(CAPACITY);
         
         if(CAPACITY%DIMENSION!=0) throw new IllegalArgumentException();
-        //(Should be invalid parameter ex. correct later.)
+        
     }
     
     //Get array of packets and put it in a rows*cols vector.
@@ -72,21 +72,18 @@ final public class Interleaver {
         return from2dArr(vec);
     }
     
-    //Return packets to correct order, receiver side.
-    public DatagramPacket[] uninterleave(DatagramPacket[] arr){
-        
-        DatagramPacket[][] vec = to2dArr(arr);
-        
-        for(int i = 0; i < DIMENSION; i++){
-            for(int j = i + 1; j < DIMENSION; j++){
-                DatagramPacket temp = vec[j][i];
-                vec[j][i] = vec[i][j];
-                vec[i][j] = temp;
+        public DatagramPacket[] sort(DatagramPacket[] arr){
+        DatagramPacket temp;
+        for(int i = 1; i < arr.length; i++){
+            for(int j = i; j > 0; j--){
+                if(arr[j].getData()[512] < arr[j-1].getData()[512]){
+                    temp = arr[j];
+                    arr[j] = arr[j-1];
+                    arr[j-1] = temp;
+                }
             }
         }
-        //Return the vector as an array.
-        return from2dArr(vec);
-        
+        return arr;
     }
     
 }
