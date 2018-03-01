@@ -1,6 +1,16 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ *
+ * @author nicklewers
+ */
 
 package voip;
-
+import CMPC3M06.AudioPlayer;
 import CMPC3M06.AudioRecorder;
 
 import javax.sound.sampled.LineUnavailableException;
@@ -12,14 +22,14 @@ import uk.ac.uea.cmp.voip.DatagramSocket2;
 import java.util.Iterator;
 import java.util.Vector;
 import java.net.*;
+import java.util.Arrays;
 
-/**
- * Sender for DGS2.
- */
+
+
 public class VoipSender2 implements Runnable {
-    
-    //Socket to send data to.
-    static DatagramSocket2 sending_socket;
+
+        //Socket to send data to.
+    static DatagramSocket sending_socket;
     //Port to open socket on on.
     int PORT;
     //IP address of machine data is being sent to.
@@ -47,14 +57,36 @@ public class VoipSender2 implements Runnable {
         
     }
     
+
+    
     //Create thread for receiver.
     public void start(){
         Thread thread = new Thread(this);
         thread.start();
     }
     
-    //Call from duplex. Terminates main loop. 
+    /*
+    *Plays the data recorded and sent.
+    *@throws IOException no blocks to play.
+    */
+    public void replay() throws IOException {
+        Iterator <byte[]> voiceItr = voiceVector.iterator();
+        
+        AudioPlayer player = null;
+        try {player = new AudioPlayer();}
+        catch (LineUnavailableException e){
+            e.printStackTrace();}
+        
+        
+        while(voiceItr.hasNext()){
+            player.playBlock(voiceItr.next());
+        }
+        
+        player.close();
+    }
+//    public function to be called from master duplex
     public void stop(){
+//        stops the main loop
         running = false;
     }
     
@@ -62,22 +94,22 @@ public class VoipSender2 implements Runnable {
     public void run(){        
         
         try{
-        //Open socket to send from.
+//        initate the socket
         sending_socket = new DatagramSocket2();
         
-        //Init, fill and send in the loop.
+//        scaffold the sender skeleton
         DatagramPacket packet;
-        byte[] block;
-        
-        voiceVector = new Vector<byte[]>();
-        //Create an array size 16 for 4*4 block interleaver.
         DatagramPacket[] packets = new DatagramPacket[16];
+        byte[] block;
+        voiceVector = new Vector<byte[]>();
+               
         
-        //Create a new interleaver with capacity of size 16.
+//        create a new interleaver with capacity of size 16.
         Interleaver interleaver = new Interleaver(packets.length);
         
-        //Keep the count of packets added to the array.
-        int i = 0;
+//        counter to calculate the number of packets received
+        int packetIndex = 0;
+        int headerIndex = 0;
         
         while(running){         
             
@@ -86,28 +118,27 @@ public class VoipSender2 implements Runnable {
             // Keep on creating and sending packets while loop is running.
             // Block size 512 bytes.
             block = recorder.getBlock();
-            packet = new DatagramPacket(block, block.length, clientIP, PORT);
+            byte[] data = Arrays.copyOf(block, 513);
+            packet = new DatagramPacket(data, data.length, clientIP, PORT);
             
             // Add packets to the array.
-            packets[i] = packet;
-            i++;
-            
+            packets[packetIndex] = packet;
+            packetIndex++;
+            data[data.length-1] = (byte)packetIndex;
             // Once the array is full...
-            if(i == packets.length){
+            if(packetIndex == packets.length){
                 
                 //...interleave contents of the array...
                 packets = interleaver.interleave(packets);
                 
                 for(int j = 0; j < packets.length; j++){
-                    
-                    // ...and send them in the interleaved order.
                     sending_socket.send(packets[j]);
                 }
                 //New empty DatagramPacket array.
                 packets = new DatagramPacket[16];
                 
                 //Reset counter back to 0.
-                i = 0;
+                packetIndex = 0;
             }
         }
         //Loop over, finish recording.
@@ -120,7 +151,5 @@ public class VoipSender2 implements Runnable {
             e.printStackTrace();
         }
     }
-}
-
     
-
+}
