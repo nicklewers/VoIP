@@ -17,8 +17,8 @@ public class VoipDuplex {
         int PORT = 55555;
         String clientIP = "localhost";
          
-        VoipReceiver receiver = new VoipReceiver(PORT);
-        VoipSender sender = new VoipSender(PORT, clientIP);
+        VoipReceiver3 receiver = new VoipReceiver3(PORT);
+        VoipSender3 sender = new VoipSender3(PORT, clientIP);
         receiver.start();
         sender.start();
         
