@@ -123,7 +123,7 @@ public class VoipSender3 implements Runnable {
             packetIndex++;
             
             // Once the array is full...
-            if(i == packets.length){
+            if(packetIndex == packets.length){
                 
                 //...interleave contents of the array...
                 packets = interleaver.interleave(packets);
