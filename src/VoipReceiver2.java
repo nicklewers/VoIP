@@ -1,18 +1,22 @@
-
 package voip;
 
 import CMPC3M06.AudioPlayer;
-
-import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
-
+import java.net.DatagramPacket;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Vector;
+import javax.sound.sampled.LineUnavailableException;
 import uk.ac.uea.cmp.voip.DatagramSocket2;
 
-import java.util.Vector;
-import java.net.*;
-
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 /**
- * Receiver for DGS2.
+ *
+ * @author nicklewers
  */
 public class VoipReceiver2 implements Runnable {
 
@@ -26,75 +30,97 @@ public class VoipReceiver2 implements Runnable {
     AudioPlayer player;
     //Set to false while running to terminate receiving and recording.
     boolean running = true;
-    
+
 
     /*
     * Construct receiver.
     * @param port to receive on.
     * @throws LineUnavailableException if no headphones/mic detected.
-    */
+     */
     public VoipReceiver2(int port) throws LineUnavailableException {
         this.PORT = port;
         this.player = new AudioPlayer();
         this.voiceVector = new Vector<byte[]>();
     }
-    
+
     //Create thread for receiver.
-    public void start(){
+    public void start() {
         Thread thread = new Thread(this);
         thread.start();
     }
-    
-    public void stop(){
+
+    /*
+    *Replay data received.
+    *@throws IOException if no blocks to play.
+     */
+    public void replay() throws IOException {
+        Iterator<byte[]> voiceItr = voiceVector.iterator();
+
+        while (voiceItr.hasNext()) {
+            player.playBlock(voiceItr.next());
+        }
+
+        player.close();
+    }
+
+    public void stop() {
         running = false;
     }
-    
+
     @Override
     public void run() {
-        
+
         try {
-            //Open socket to receive to.
-            receiving_socket = new DatagramSocket2(PORT);
+           
             
-            //Init, fill, receive and play in the loop.
+//            initiate the socket
+            receiving_socket = new DatagramSocket2(PORT);
+                        
+            
+//            scaffold the receiver skeleton
+            
             byte[] buffer;
-            DatagramPacket packet;
             DatagramPacket[] packets = new DatagramPacket[16];
+            DatagramPacket packet;
+            
+//            initiate the interleaver
             Interleaver interleaver = new Interleaver(packets.length);
             
-            //Count number of packets received.
-            int i = 0;
+            // counter to calculate index of packet received
+            int packetIndex = 0;
             
             while(running){
                 
-                buffer = new byte[512];
-                packet = new DatagramPacket(buffer, 0, buffer.length);
+                buffer = new byte[513];
+                packet = new DatagramPacket(buffer, 0, 513);
                 receiving_socket.receive(packet);
+                packets[packetIndex] = packet;
+//                collect the received packets in an array of size 16.
+//                increment packet counter
+                packetIndex++;
                 
-                //Collect the received packets in an array of size 16.
-                packets[i] = packet;
-                i++;
-                
-                //Once array is full uninterleave the packets and play in 
-                //correct order.
-                if(i == packets.length){
-                    packets = interleaver.uninterleave(packets);
-                    for(int j = 0; j < packets.length; j++){
-                        
+//                once array is full uninterleave the packets and play in 
+//                correct order.
+                if(packetIndex == packets.length){
+                    packets = interleaver.sort(packets);
+                    
                         // ADD 
                         // CONCEALMENT
                         // SOMEWHERE
-                        
-                        player.playBlock(packets[j].getData());
-                    }
+                        for(int i = 0; i < 16; i++){
+                            System.out.println(packets[i].getData()[512]);
+                           player.playBlock(Arrays.copyOf(packets[i].getData(), 512));
+
+                        }
+                    
                     
                     //Set counter back to 0/
-                    i = 0;
+                    packetIndex = 0;
                     //Create a new array to collect next set of incoming packets.
                     packets = new DatagramPacket[16];
                 }
             }
-            
+    
             //Quit receiving.
             receiving_socket.close();
             //Running is false, close player.
@@ -104,5 +130,5 @@ public class VoipReceiver2 implements Runnable {
             e.printStackTrace();
         }
     }
-    
+
 }
